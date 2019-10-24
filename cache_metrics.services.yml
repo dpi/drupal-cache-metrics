@@ -1,6 +1,8 @@
+parameters:
+  cache_metrics.new_relic.invalidations: true
 services:
   cache_metrics.invalidator:
     class: Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator
-    arguments: ['@logger.factory']
+    arguments: ['@logger.factory', '%cache_metrics.new_relic.invalidations%']
     tags:
       - { name: cache_tags_invalidator }
