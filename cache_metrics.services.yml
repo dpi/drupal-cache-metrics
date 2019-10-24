@@ -1,0 +1,6 @@
+services:
+  cache_metrics.invalidator:
+    class: Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator
+    arguments: ['@logger.factory']
+    tags:
+      - { name: cache_tags_invalidator }

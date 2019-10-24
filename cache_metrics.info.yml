@@ -1,0 +1,5 @@
+name: Cache Metrics
+type: module
+description: Log and measure cache performance over time
+package: Performance
+core: 8.x
