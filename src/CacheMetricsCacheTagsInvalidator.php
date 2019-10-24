@@ -55,7 +55,7 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
   public function invalidateTags(array $tags) {
     $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', $tags)]));
 
-    if (1 || $this->isNewRelicEnabled()) {
+    if ($this->isNewRelicEnabled()) {
       $request = $this->requestStack->getCurrentRequest();
       // We don't use Monolog's NR handler because it just sets attributes on an existing event. See \Monolog\Handler\NewRelicHandler.
       // We can't record just one event because https://discuss.newrelic.com/t/how-to-send-multiple-items-in-a-custom-attribute/9280/5.
