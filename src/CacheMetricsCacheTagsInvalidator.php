@@ -63,13 +63,13 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
         $attributes = [
           'tag' => $tag,
           'uri' => $request->getBaseUrl() . $request->getPathInfo(),
-          // Acquia uses this header to identify a request.
-          'request_id' => $this->requestStack->getCurrentRequest()->headers->get('HTTP_X_REQUEST_ID'),
+          // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
+          'request_id' => getenv('HTTP_X_REQUEST_ID'),
           // A Cloudflare trace header.
           'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
           'uid' => $this->currentUser->id(),
         ];
-        newrelic_record_custom_event('invalidateTag', $attributes);
+        newrelic_record_custom_event('InvalidateTag', $attributes);
       }
     }
   }
