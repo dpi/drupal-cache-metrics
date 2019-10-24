@@ -3,6 +3,8 @@ namespace Drupal\cache_metrics;
 
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Session\AccountProxyInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Class CacheMetricsCacheTagsInvalidator.
@@ -16,18 +18,32 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
   /**
    * @var bool
    */
-  private $newRelicEnabled;
+  protected $newRelicEnabled;
+
+  /**
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
 
   /**
    * CacheMetricsCacheTagsInvalidator constructor.
    *
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerChannelFactory
    *   A logger factory.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
    * @param bool $new_relic_enabled
    */
-  public function __construct(LoggerChannelFactoryInterface $loggerChannelFactory, bool $new_relic_enabled) {
+  public function __construct(LoggerChannelFactoryInterface $loggerChannelFactory, RequestStack $requestStack, AccountProxyInterface $currentUser, bool $new_relic_enabled) {
     $this->logger = $loggerChannelFactory->get('cache_metrics');
     $this->newRelicEnabled = $new_relic_enabled;
+    $this->requestStack = $requestStack;
+    $this->currentUser = $currentUser;
   }
 
   /**
@@ -38,11 +54,22 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
    */
   public function invalidateTags(array $tags) {
     $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', $tags)]));
-    if ($this->isNewRelicEnabled()) {
+
+    if (1 || $this->isNewRelicEnabled()) {
+      $request = $this->requestStack->getCurrentRequest();
       // We don't use Monolog's NR handler because it just sets attributes on an existing event. See \Monolog\Handler\NewRelicHandler.
       // We can't record just one event because https://discuss.newrelic.com/t/how-to-send-multiple-items-in-a-custom-attribute/9280/5.
       foreach ($tags as $tag) {
-        newrelic_record_custom_event('invalidateTag', ['tag' => $tag]);
+        $attributes = [
+          'tag' => $tag,
+          'uri' => $request->getBaseUrl() . $request->getPathInfo(),
+          // Acquia uses this header to identify a request.
+          'request_id' => $this->requestStack->getCurrentRequest()->headers->get('HTTP_X_REQUEST_ID'),
+          // A Cloudflare trace header.
+          'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
+          'uid' => $this->currentUser->id(),
+        ];
+        newrelic_record_custom_event('invalidateTag', $attributes);
       }
     }
   }
