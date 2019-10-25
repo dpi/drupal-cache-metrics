@@ -61,10 +61,11 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
    * {@inheritdoc}
    */
   public function get($cid, $allow_invalid = FALSE) {
-    Timer::start($cid);
+    $uniqId = uniqid();
+    Timer::start($uniqId);
     $cache = $this->cacheBackend->get($cid, $allow_invalid);
     // Durations are in milliseconds.
-    $duration = (int) Timer::stop($cid)['time'];
+    $duration = (int) Timer::stop($uniqId)['time'];
 
     $request = $this->requestStack->getCurrentRequest();
     $attributes = [
