@@ -54,6 +54,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     $attributes = [
       'duration' => $duration,
       'cid' => $cid,
+      'bin' => $this->bin,
       'hit_or_miss' => $cache ? 'hit' : 'miss',
       'expire' => $cache ? $cache->expire : '',
       'tags' => $cache ? implode(' ', $cache->tags) : '',
@@ -79,6 +80,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
         // Not possible to measure duration for getMultiple().
         'duration' => '',
         'cid' => $cid,
+        'bin' => $this->bin,
         'hit_or_miss' => $hit ? 'hit' : 'miss',
         'expire' => $hit ? $cache[$cid]->expire : '',
         'tags' => $hit ? implode(' ', $cache[$cid]->tags) : '',
