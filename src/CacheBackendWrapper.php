@@ -63,16 +63,18 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
   public function get($cid, $allow_invalid = FALSE) {
     Timer::start($cid);
     $cache = $this->cacheBackend->get($cid, $allow_invalid);
-    $duration = round(Timer::stop($cid)['time']);
+    // Durations are in milliseconds.
+    $duration = (int) Timer::stop($cid)['time'];
 
     $request = $this->requestStack->getCurrentRequest();
     $attributes = [
       'duration' => $duration,
       'cid' => $cid,
       'bin' => $this->bin,
-      'hit_or_miss' => $cache ? 'hit' : 'miss',
-      'expire' => $cache ? $cache->expire : '',
-      'tags' => $cache ? implode(' ', $cache->tags) : '',
+      'hit' => (int) $cache,
+      'miss' => (int) !$cache,
+      'expire' => $cache ? $cache->expire : NULL,
+      'tags' => $cache ? implode(' ', $cache->tags) : NULL,
       'isMultiple' => FALSE,
       'uri' => $request->getBaseUrl() . $request->getPathInfo(),
       // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
@@ -100,12 +102,13 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
       $request = $this->requestStack->getCurrentRequest();
       $attributes = [
         // Not possible to measure duration for getMultiple().
-        'duration' => '',
+        'duration' => NULL,
         'cid' => $cid,
         'bin' => $this->bin,
-        'hit_or_miss' => $hit ? 'hit' : 'miss',
-        'expire' => $hit ? $cache[$cid]->expire : '',
-        'tags' => $hit ? implode(' ', $cache[$cid]->tags) : '',
+        'hit' => (int) $hit,
+        'miss' => (int) !$hit,
+        'expire' => $hit ? $cache[$cid]->expire : NULL,
+        'tags' => $hit ? implode(' ', $cache[$cid]->tags) : NULL,
         'isMultiple' => TRUE,
         'uri' => $request->getBaseUrl() . $request->getPathInfo(),
         // Acquia https://docs.acquia.com/acquia-cloud/develop/env-variable.
