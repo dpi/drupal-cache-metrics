@@ -6,3 +6,10 @@ services:
     arguments: ['@logger.factory', '@request_stack', '@current_user', '%cache_metrics.new_relic.invalidations%']
     tags:
       - { name: cache_tags_invalidator }
+  cache_metrics.cache_factory:
+    class: Drupal\cache_metrics\CacheFactoryWrapper
+    public: false
+    decorates: cache_factory
+    arguments: ['@cache_metrics.cache_factory.inner', '%cache_metrics.new_relic.invalidations%']
+    properties:
+      _serviceId: 'cache_factory'
