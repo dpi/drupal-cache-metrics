@@ -6,6 +6,8 @@ use Drupal\Component\Utility\Timer;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
+use Drupal\Core\Session\AccountProxyInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Wraps an existing cache backend to track calls to the cache backend.
@@ -31,6 +33,16 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
   protected $bin;
 
   /**
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected $requestStack;
+
+  /**
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
    * Constructs a new CacheBackendWrapper.
    *
    * @param \Drupal\Core\Cache\CacheBackendInterface $cacheBackend
@@ -38,9 +50,11 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
    * @param string $bin
    *   The name of the wrapped cache bin.
    */
-  public function __construct(CacheBackendInterface $cacheBackend, $bin) {
+  public function __construct(CacheBackendInterface $cacheBackend, $bin, AccountProxyInterface $currentUser, RequestStack $requestStack) {
     $this->cacheBackend = $cacheBackend;
     $this->bin = $bin;
+    $this->currentUser = $currentUser;
+    $this->requestStack = $requestStack;
   }
 
   /**
@@ -51,6 +65,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     $cache = $this->cacheBackend->get($cid, $allow_invalid);
     $duration = round(Timer::stop($cid)['time']);
 
+    $request = $this->requestStack->getCurrentRequest();
     $attributes = [
       'duration' => $duration,
       'cid' => $cid,
@@ -59,8 +74,14 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
       'expire' => $cache ? $cache->expire : '',
       'tags' => $cache ? implode(' ', $cache->tags) : '',
       'isMultiple' => FALSE,
+      'uri' => $request->getBaseUrl() . $request->getPathInfo(),
+      // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
+      'request_id' => getenv('HTTP_X_REQUEST_ID'),
+      // A Cloudflare trace header.
+      'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
+      'uid' => $this->currentUser->id(),
     ];
-    newrelic_record_custom_event(self::EVENT_NAME, $attributes);
+    $this->record($attributes);
 
     return $cache;
   }
@@ -76,6 +97,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     // Record an event for each cid that was requested.
     foreach ($cidsCopy as $cid) {
       $hit = !in_array($cid, $cids);
+      $request = $this->requestStack->getCurrentRequest();
       $attributes = [
         // Not possible to measure duration for getMultiple().
         'duration' => '',
@@ -85,8 +107,14 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
         'expire' => $hit ? $cache[$cid]->expire : '',
         'tags' => $hit ? implode(' ', $cache[$cid]->tags) : '',
         'isMultiple' => TRUE,
+        'uri' => $request->getBaseUrl() . $request->getPathInfo(),
+        // Acquia https://docs.acquia.com/acquia-cloud/develop/env-variable.
+        'request_id' => getenv('HTTP_X_REQUEST_ID'),
+        // A Cloudflare header.
+        'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
+        'uid' => $this->currentUser->id(),
       ];
-      newrelic_record_custom_event(self::EVENT_NAME, $attributes);
+      $this->record($attributes);
     }
 
     return $cache;
@@ -169,6 +197,15 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
    */
   public function removeBin() {
     return $this->cacheBackend->removeBin();
+  }
+
+  /**
+   * Record the event.
+   *
+   * @param array $attributes
+   */
+  protected function record(array $attributes) {
+    newrelic_record_custom_event(self::EVENT_NAME, $attributes);
   }
 
 }

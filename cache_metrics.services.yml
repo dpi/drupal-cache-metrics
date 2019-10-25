@@ -10,6 +10,6 @@ services:
     class: Drupal\cache_metrics\CacheFactoryWrapper
     public: false
     decorates: cache_factory
-    arguments: ['@cache_metrics.cache_factory.inner', '%cache_metrics.new_relic.invalidations%']
+    arguments: ['@cache_metrics.cache_factory.inner', '@current_user', '@request_stack', '%cache_metrics.new_relic.invalidations%']
     properties:
       _serviceId: 'cache_factory'
