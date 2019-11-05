@@ -32,11 +32,11 @@ class CacheFactoryWrapper implements CacheFactoryInterface, ContainerAwareInterf
   protected $cacheBackends = [];
 
   /**
-   * A container parameter for disabling New Relic even when the extension is present.
+   * A container parameter for disabling cache hit/miss logging for certain bins.
    *
-   * @var bool
+   * @var array
    */
-  protected $newRelicEnabled;
+  protected $blacklist;
 
   /**
    * @var \Drupal\Core\Session\AccountProxyInterface
@@ -53,11 +53,13 @@ class CacheFactoryWrapper implements CacheFactoryInterface, ContainerAwareInterf
    *
    * @param \Drupal\Core\Cache\CacheFactoryInterface $cache_factory
    *   The cache factory.
-   * @param bool $newRelicEnabled
+   * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
+   * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
+   * @param array $blacklist
    */
-  public function __construct(CacheFactoryInterface $cache_factory, AccountProxyInterface $currentUser, RequestStack $requestStack, bool $newRelicEnabled) {
+  public function __construct(CacheFactoryInterface $cache_factory, AccountProxyInterface $currentUser, RequestStack $requestStack, array $blacklist) {
     $this->cacheFactory = $cache_factory;
-    $this->newRelicEnabled = $newRelicEnabled;
+    $this->blacklist = $blacklist;
     $this->currentUser = $currentUser;
     $this->requestStack = $requestStack;
   }
@@ -66,7 +68,7 @@ class CacheFactoryWrapper implements CacheFactoryInterface, ContainerAwareInterf
    * {@inheritdoc}
    */
   public function get($bin) {
-    if (!$this->isNewRelicEnabled()) {
+    if (!$this->isEnabled($bin)) {
       // If disabled, return an unwrapped backend.
       return $this->cacheFactory->get($bin);
     }
@@ -79,12 +81,14 @@ class CacheFactoryWrapper implements CacheFactoryInterface, ContainerAwareInterf
   }
 
   /**
-   * Use services.yml parameter to disable NR if you have the NR extension but dont want this logging.
+   * Use services.yml parameter to disable logging for certain bins, or '*' for all bins.
+   *
+   * @param string $bin
    *
    * @return bool
    */
-  public function isNewRelicEnabled() {
-    return $this->newRelicEnabled && function_exists('newrelic_record_custom_event');
+  public function isEnabled($bin) {
+    return !in_array('*', $this->blacklist) && !in_array($bin, $this->blacklist) && function_exists('newrelic_record_custom_event');
   }
 
 }

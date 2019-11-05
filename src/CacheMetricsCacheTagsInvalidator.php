@@ -18,7 +18,7 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
   /**
    * @var bool
    */
-  protected $newRelicEnabled;
+  protected $isEnabled;
 
   /**
    * @var \Symfony\Component\HttpFoundation\RequestStack
@@ -37,11 +37,11 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
    *   A logger factory.
    * @param \Symfony\Component\HttpFoundation\RequestStack $requestStack
    * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
-   * @param bool $new_relic_enabled
+   * @param bool $isEnabled
    */
-  public function __construct(LoggerChannelFactoryInterface $loggerChannelFactory, RequestStack $requestStack, AccountProxyInterface $currentUser, bool $new_relic_enabled) {
+  public function __construct(LoggerChannelFactoryInterface $loggerChannelFactory, RequestStack $requestStack, AccountProxyInterface $currentUser, bool $isEnabled) {
     $this->logger = $loggerChannelFactory->get('cache_metrics');
-    $this->newRelicEnabled = $new_relic_enabled;
+    $this->isEnabled = $isEnabled;
     $this->requestStack = $requestStack;
     $this->currentUser = $currentUser;
   }
@@ -80,7 +80,7 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
    * @return bool
    */
   public function isNewRelicEnabled() {
-    return $this->newRelicEnabled && function_exists('newrelic_record_custom_event');
+    return $this->isEnabled && function_exists('newrelic_record_custom_event');
   }
 
 }

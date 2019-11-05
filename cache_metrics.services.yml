@@ -1,15 +1,17 @@
 parameters:
-  cache_metrics.new_relic.invalidations: true
+  cache_metrics.invalidations: true
+  cache_metrics.bins.blacklist:
+    - config
 services:
   cache_metrics.invalidator:
     class: Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator
-    arguments: ['@logger.factory', '@request_stack', '@current_user', '%cache_metrics.new_relic.invalidations%']
+    arguments: ['@logger.factory', '@request_stack', '@current_user', '%cache_metrics.invalidations%']
     tags:
       - { name: cache_tags_invalidator }
   cache_metrics.cache_factory:
     class: Drupal\cache_metrics\CacheFactoryWrapper
     public: false
     decorates: cache_factory
-    arguments: ['@cache_metrics.cache_factory.inner', '@current_user', '@request_stack', '%cache_metrics.new_relic.invalidations%']
+    arguments: ['@cache_metrics.cache_factory.inner', '@current_user', '@request_stack', '%cache_metrics.bins.blacklist%']
     properties:
       _serviceId: 'cache_factory'

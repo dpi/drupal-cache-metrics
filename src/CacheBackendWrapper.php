@@ -65,7 +65,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
 
     $request = $this->requestStack->getCurrentRequest();
     $attributes = [
-      // Granular duration not possible for getMultiple so omitted for now.
+      // @todo - Get duration from a matching set().
       'duration' => NULL,
       'cid' => $cid,
       'bin' => $this->bin,
