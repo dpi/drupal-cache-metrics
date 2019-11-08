@@ -38,8 +38,8 @@ In order to use something other than New Relic custom events,
 method as needed, and also change the `get()` method to instantiate a different 
 CacheBackendWrapper class. That class can extend this module's 
 CacheBackendWrapper and override the `record()` method.
-1. Override the `cache_metrics.invalidator service` and \Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator::invalidateTags
-method to log elsewhere. Also note \Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator::isEnabled method. 
+1. Override the `cache_metrics.invalidator service` and change the isEnabled() and 
+record() methods to log elsewhere. 
  
 Reducing voluminous data logging
 ---------
