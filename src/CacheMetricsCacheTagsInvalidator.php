@@ -55,7 +55,7 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
   public function invalidateTags(array $tags) {
     $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', $tags)]));
 
-    if ($this->isNewRelicEnabled()) {
+    if ($this->isEnabled()) {
       $request = $this->requestStack->getCurrentRequest();
       // We don't use Monolog's NR handler because it just sets attributes on an existing event. See \Monolog\Handler\NewRelicHandler.
       // We can't record just one event because https://discuss.newrelic.com/t/how-to-send-multiple-items-in-a-custom-attribute/9280/5.
@@ -64,23 +64,33 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
           'tag' => $tag,
           'uri' => $request->getBaseUrl() . $request->getPathInfo(),
           // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
+          // Its harmless for anyone else. Feel free to override and record your own request-id here.
           'request_id' => getenv('HTTP_X_REQUEST_ID'),
           // A Cloudflare trace header.
           'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
           'uid' => $this->currentUser->id(),
         ];
-        newrelic_record_custom_event('InvalidateTag', $attributes);
+        $this->record($attributes);
       }
     }
   }
 
   /**
-   * Use services.yml parameter to disable NR if you have the NR extension but dont want this logging.
+   * Use a cache_metrics.services.yml parameter if you have the NR extension but dont want this logging.
    *
    * @return bool
    */
-  public function isNewRelicEnabled() {
+  public function isEnabled() {
     return $this->isEnabled && function_exists('newrelic_record_custom_event');
+  }
+
+  /**
+   * Record the invalidation.
+   *
+   * @param array $attributes
+   */
+  protected function record(array $attributes) {
+    newrelic_record_custom_event('InvalidateTag', $attributes);
   }
 
 }
