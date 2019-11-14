@@ -1,7 +1,9 @@
 parameters:
   cache_metrics.invalidations: true
   cache_metrics.bins.blacklist:
+    # Omit bins that are high volume and always hit.
     - config
+    - discovery
 services:
   cache_metrics.invalidator:
     class: Drupal\cache_metrics\CacheMetricsCacheTagsInvalidator
