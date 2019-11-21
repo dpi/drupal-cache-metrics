@@ -31,6 +31,15 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
   protected $currentUser;
 
   /**
+   * A list of tags that have already been invalidated in this request.
+   *
+   * Used to prevent the recording of the same cache tag multiple times.
+   *
+   * @var string[]
+   */
+  protected $invalidatedTags = [];
+
+  /**
    * CacheMetricsCacheTagsInvalidator constructor.
    *
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerChannelFactory
@@ -53,13 +62,19 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
    *   The list of tags for which to invalidate cache items.
    */
   public function invalidateTags(array $tags) {
-    $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', $tags)]));
+    $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', array_unique($tags))]));
 
     if ($this->isEnabled()) {
       $request = $this->requestStack->getCurrentRequest();
       // We don't use Monolog's NR handler because it just sets attributes on an existing event. See \Monolog\Handler\NewRelicHandler.
       // We can't record just one event because https://discuss.newrelic.com/t/how-to-send-multiple-items-in-a-custom-attribute/9280/5.
       foreach ($tags as $tag) {
+        // Only invalidate tags once per request unless they are written again.
+        if (isset($this->invalidatedTags[$tag])) {
+          continue;
+        }
+        $this->invalidatedTags[$tag] = TRUE;
+
         $attributes = [
           'tag' => $tag,
           'uri' => $request->getBaseUrl() . $request->getPathInfo(),
