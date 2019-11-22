@@ -83,7 +83,7 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
           'request_id' => getenv('HTTP_X_REQUEST_ID'),
           // A Cloudflare trace header.
           'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
-          'uid' => $this->currentUser->id(),
+          'username' => $this->currentUser->getAccountName(),
         ];
         $this->record($attributes);
       }
