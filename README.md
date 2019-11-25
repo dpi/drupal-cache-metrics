@@ -48,5 +48,5 @@ per minute on a popular site. Since the New Relic daemon buffers these events
 and send them every minute, this does not affect page performance. If you exceed NR
 limits, [the daemon will automatically start sampling](https://docs.newrelic.com/docs/agents/manage-apm-agents/agent-data/new-relic-events-limits-sampling).
 
-This module defaults to omitting cache gets to the `config` bin. Additional bins may 
+This module defaults to omitting cache gets to the `config` and `discovery` bins. Additional bins may 
 be blacklisted via a service parameter.     
