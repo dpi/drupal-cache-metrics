@@ -2,7 +2,6 @@
 
 namespace Drupal\cache_metrics;
 
-use Drupal\Component\Utility\Timer;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
@@ -76,11 +75,11 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
       'expire' => $cache ? $cache->expire : NULL,
       'tags' => $cache ? implode(' ', $cache->tags) : NULL,
       'isMultiple' => FALSE,
-      'uri' => $request->getBaseUrl() . $request->getPathInfo(),
+      'uri' => $request ? $request->getBaseUrl() . $request->getPathInfo() : NULL,
       // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
       'request_id' => $request_id ? $request_id : NULL,
       // A Cloudflare trace header.
-      'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
+      'cf_ray' => $request ? $request->headers->get('CF-RAY') : NULL,
       'username' => $this->currentUser->getAccountName(),
     ];
     $this->record($attributes);
@@ -111,11 +110,11 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
         'expire' => $hit ? $cache[$cid]->expire : NULL,
         'tags' => $hit ? implode(' ', $cache[$cid]->tags) : NULL,
         'isMultiple' => TRUE,
-        'uri' => $request->getBaseUrl() . $request->getPathInfo(),
+        'uri' => $request ? $request->getBaseUrl() . $request->getPathInfo() : NULL,
         // Acquia https://docs.acquia.com/acquia-cloud/develop/env-variable.
         'request_id' => $request_id ? $request_id : NULL,
         // A Cloudflare header.
-        'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
+        'cf_ray' => $request ? $request->headers->get('CF-RAY') : NULL,
         'username' => $this->currentUser->getAccountName(),
       ];
       $this->record($attributes);
