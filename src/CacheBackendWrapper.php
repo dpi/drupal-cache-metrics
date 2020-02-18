@@ -64,6 +64,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     $cache = $this->cacheBackend->get($cid, $allow_invalid);
 
     $request = $this->requestStack->getCurrentRequest();
+    $request_id = getenv('HTTP_X_REQUEST_ID');
     $attributes = [
       // @todo - Get duration from a matching set().
       'duration' => NULL,
@@ -76,7 +77,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
       'isMultiple' => FALSE,
       'uri' => $request->getBaseUrl() . $request->getPathInfo(),
       // Acquia uses this to identify a request. https://docs.acquia.com/acquia-cloud/develop/env-variable/
-      'request_id' => getenv('HTTP_X_REQUEST_ID'),
+      'request_id' => $request_id ? $request_id : NULL,
       // A Cloudflare trace header.
       'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
       'username' => $this->currentUser->getAccountName(),
@@ -93,6 +94,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
     $cidsCopy = $cids;
     // Perform the actual fetch.
     $cache = $this->cacheBackend->getMultiple($cids, $allow_invalid);
+    $request_id = getenv('HTTP_X_REQUEST_ID');
 
     // Record an event for each cid that was requested.
     foreach ($cidsCopy as $cid) {
@@ -110,7 +112,7 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
         'isMultiple' => TRUE,
         'uri' => $request->getBaseUrl() . $request->getPathInfo(),
         // Acquia https://docs.acquia.com/acquia-cloud/develop/env-variable.
-        'request_id' => getenv('HTTP_X_REQUEST_ID'),
+        'request_id' => $request_id ? $request_id : NULL,
         // A Cloudflare header.
         'cf_ray' => $this->requestStack->getCurrentRequest()->headers->get('CF-RAY'),
         'username' => $this->currentUser->getAccountName(),
