@@ -65,13 +65,14 @@ class CacheBackendWrapper implements CacheBackendInterface, CacheTagsInvalidator
 
     $request = $this->requestStack->getCurrentRequest();
     $request_id = getenv('HTTP_X_REQUEST_ID');
+    $hit = $cache !== FALSE;
     $attributes = [
       // @todo - Get duration from a matching set().
       'duration' => NULL,
       'cid' => $cid,
       'bin' => $this->bin,
-      'hit' => (int) $cache,
-      'miss' => (int) !$cache,
+      'hit' => (int) $hit,
+      'miss' => (int) !$hit,
       'expire' => $cache ? $cache->expire : NULL,
       'tags' => $cache ? implode(' ', $cache->tags) : NULL,
       'isMultiple' => FALSE,
