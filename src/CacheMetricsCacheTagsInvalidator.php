@@ -2,6 +2,7 @@
 namespace Drupal\cache_metrics;
 
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
+use Drupal\Core\Database\DatabaseExceptionWrapper;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -62,7 +63,18 @@ class CacheMetricsCacheTagsInvalidator implements CacheTagsInvalidatorInterface 
    *   The list of tags for which to invalidate cache items.
    */
   public function invalidateTags(array $tags) {
-    $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', array_unique($tags))]));
+    try {
+      $this->logger->debug(t('Invalidating the following tags: @tags', ['@tags' => implode(' ', array_unique($tags))]));
+    }
+    catch (DatabaseExceptionWrapper $e) {
+      // Under rare circumstances a database exception will be thrown.
+      // Specifically if you attempt to uninstall a logging module backed by the
+      // database, eg. dblog. In that case, the DB schema is removed, followed
+      // by some tag invalidation. When those tag invalidations happen, trying
+      // to log to the database, as in the case of dblog, will throw an
+      // exception, since it's DB schema is gone. In that rare case, we catch
+      // and ignore the exception here.
+    }
 
     if ($this->isEnabled()) {
       $request = $this->requestStack->getCurrentRequest();
